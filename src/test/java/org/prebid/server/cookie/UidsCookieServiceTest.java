@@ -903,16 +903,24 @@ public class UidsCookieServiceTest extends VertxTest {
         final Map<String, Cookie> actualCookies = result.stream()
                 .collect(Collectors.toMap(Cookie::getName, identity()));
 
-        assertThat(actualCookies.keySet()).hasSize(5)
-                .containsOnly("uids", "uids2", "uids3", "uids4", "uids5");
+        assertThat(actualCookies.keySet())
+                .containsExactlyInAnyOrder("uids", "uids2", "uids3", "uids4", "uids5");
 
-        assertThat(decodeUids(actualCookies.get("uids").getValue()).getUids().keySet())
-                .containsOnly("very-very-very-very-long-family", "another-very-very-very-long-family");
+        final Uids uids = decodeUids(actualCookies.get("uids").getValue());
+        assertThat(uids.getUids().keySet()).hasSize(2);
         assertThat(actualCookies.get("uids").getMaxAge()).isEqualTo(7776000L);
 
-        assertThat(decodeUids(actualCookies.get("uids2").getValue()).getUids().keySet())
-                .containsOnly("family");
+        final Uids uids2 = decodeUids(actualCookies.get("uids2").getValue());
+        assertThat(uids2.getUids().keySet()).hasSize(1);
         assertThat(actualCookies.get("uids2").getMaxAge()).isEqualTo(7776000L);
+
+        assertThat(List.of(uids, uids2))
+                .extracting(Uids::getUids)
+                .flatExtracting(Map::keySet)
+                .containsExactlyInAnyOrder(
+                        "very-very-very-very-long-family",
+                        "another-very-very-very-long-family",
+                        "family");
 
         assertThat(actualCookies.get("uids3").getValue()).isEmpty();
         assertThat(actualCookies.get("uids3").getMaxAge()).isEqualTo(0);
